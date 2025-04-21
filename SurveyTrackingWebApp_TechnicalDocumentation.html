@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Tracking Web Application - Technical Documentation</title>
+    <style>
+        body {
+            font-family: 'Calibri', Arial, sans-serif;
+            line-height: 1.5;
+            margin: 20px;
+            max-width: 210mm; /* A4 width */
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #3498db;
+            margin-top: 15px;
+        }
+        h4 {
+            color: #16a085;
+            margin-top: 15px;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 10px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        code {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #f8f8f8;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .architecture-diagram {
+            white-space: pre;
+            font-family: 'Consolas', 'Courier New', monospace;
+            line-height: 1.2;
+            overflow-x: auto;
+        }
+        ul, ol {
+            padding-left: 20px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <h1>Survey Tracking Web Application - Technical Documentation</h1>
+
+    <h2>1. Overview</h2>
+    <p>The Survey Tracking Web Application is a comprehensive solution designed to manage, compare, and search survey questions across different versions. Built with a Flask backend and React frontend, the application provides an intuitive interface for creating, editing, and tracking surveys while offering powerful natural language search capabilities through Hugging Face's transformers.</p>
+
+    <h2>2. System Architecture</h2>
+    <div class="architecture-diagram">
+<pre>
+┌────────────────────────────────────────────────────────────────┐
+│                      Client Browser                            │
+└───────────────────────────────┬────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│                   Flask Web Server (Port 5000)                 │
+│                                                                │
+│  ┌─────────────────┐    ┌──────────────────┐    ┌───────────┐  │
+│  │   Flask Routes   │◄──┤  Python Backend  │◄──┤  Jinja2    │  │
+│  │   - app.py      │    │  - models.py     │    │ Templates  │  │
+│  └────────┬────────┘    │  - nlp_search.py │    │ - HTML     │  │
+│           │             └────────┬─────────┘    └───────────┘  │
+│           │                      │                              │
+│           ▼                      ▼                              │
+│  ┌────────────────┐     ┌────────────────────┐                 │
+│  │  RESTful API   │     │ SQLAlchemy ORM     │                 │
+│  └────────┬───────┘     └──────────┬─────────┘                 │
+│           │                        │                            │
+└───────────┼────────────────────────┼────────────────────────────┘
+            │                        │
+            ▼                        ▼
+┌───────────────────────┐  ┌──────────────────────────────────────┐
+│ Static Files (CDN)    │  │        PostgreSQL Database           │
+│ - React Components    │  │ ┌────────────┐  ┌────────────────┐   │
+│ - CSS Styles          │  │ │ Survey     │  │ Question       │   │
+│ - JS Scripts          │  │ │ - id       │  │ - id           │   │
+└───────────────────────┘  │ │ - name     │  │ - survey_id    │   │
+                           │ │ - dates    │  │ - number       │   │
+┌───────────────────────┐  │ └────────────┘  │ - text         │   │
+│ NLP Processing         │  │                 └────────────────┘   │
+│ - Hugging Face         │  │ ┌────────────┐  ┌────────────────┐   │
+│   Transformers         │◄─┼─┤ Option     │  │ AuditLog       │   │
+│ - Semantic Search      │  │ │ - id       │  │ - id           │   │
+│ - Embedding Generation │  │ │ - question_│  │ - action       │   │
+└───────────────────────┘  │ │   id        │  │ - entity       │   │
+                           │ └────────────┘  └────────────────┘   │
+                           └──────────────────────────────────────┘
+</pre>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h2>3. Technical Stack</h2>
+
+    <h3>3.1 Frontend</h3>
+    <ul>
+        <li><strong>Framework</strong>: React 18 (loaded via CDN)</li>
+        <li><strong>UI Framework</strong>: Bootstrap 5.2</li>
+        <li><strong>Script Processing</strong>: Babel (in-browser transformation)</li>
+        <li><strong>API Communication</strong>: Axios</li>
+        <li><strong>Icons</strong>: Feather Icons</li>
+        <li><strong>State Management</strong>: React Context API and useState hooks</li>
+    </ul>
+
+    <h3>3.2 Backend</h3>
+    <ul>
+        <li><strong>Framework</strong>: Flask (Python)</li>
+        <li><strong>ORM</strong>: SQLAlchemy 3.0+</li>
+        <li><strong>Database</strong>: PostgreSQL</li>
+        <li><strong>WSGI Server</strong>: Gunicorn</li>
+        <li><strong>Security Middleware</strong>: Werkzeug ProxyFix</li>
+    </ul>
+
+    <h3>3.3 NLP Components</h3>
+    <ul>
+        <li><strong>Library</strong>: Hugging Face Transformers</li>
+        <li><strong>Model</strong>: sentence-transformers/all-MiniLM-L6-v2</li>
+        <li><strong>Tensor Library</strong>: PyTorch</li>
+        <li><strong>Fallback Mechanism</strong>: Keyword search using SQL ILIKE</li>
+    </ul>
+
+    <h3>3.4 Database Schema</h3>
+    <ul>
+        <li><strong>Survey</strong>: Main entity storing survey metadata</li>
+        <li><strong>Question</strong>: Survey questions with numbering and text</li>
+        <li><strong>Option</strong>: Answer options associated with questions</li>
+        <li><strong>AuditLog</strong>: System audit trail for tracking changes</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>4. Key Components</h2>
+
+    <h3>4.1 Data Models</h3>
+
+    <h4>4.1.1 Survey Model</h4>
+    <pre><code>class Survey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    questions = db.relationship('Question', backref='survey', cascade='all, delete-orphan')</code></pre>
+
+    <h4>4.1.2 Question Model</h4>
+    <pre><code>class Question(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    survey_id = db.Column(db.Integer, db.ForeignKey('survey.id'), nullable=False)
+    question_number = db.Column(db.String(10), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    options = db.relationship('Option', backref='question', cascade='all, delete-orphan')</code></pre>
+
+    <h4>4.1.3 Option Model</h4>
+    <pre><code>class Option(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)</code></pre>
+
+    <h4>4.1.4 AuditLog Model</h4>
+    <pre><code>class AuditLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    action = db.Column(db.String(50), nullable=False)  # CREATE, UPDATE, DELETE
+    entity_type = db.Column(db.String(50), nullable=False)  # Survey, Question, etc.
+    entity_id = db.Column(db.Integer)
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)</code></pre>
+
+    <div class="page-break"></div>
+
+    <h3>4.2 API Endpoints</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+                <th>Request Body</th>
+                <th>Response</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/surveys</code></td>
+                <td>GET</td>
+                <td>Retrieve all surveys</td>
+                <td>-</td>
+                <td>JSON array of surveys</td>
+            </tr>
+            <tr>
+                <td><code>/api/surveys</code></td>
+                <td>POST</td>
+                <td>Create a new survey</td>
+                <td>Survey data with questions and options</td>
+                <td>Created survey data</td>
+            </tr>
+            <tr>
+                <td><code>/api/surveys/&lt;id&gt;</code></td>
+                <td>GET</td>
+                <td>Retrieve specific survey</td>
+                <td>-</td>
+                <td>Survey with questions and options</td>
+            </tr>
+            <tr>
+                <td><code>/api/surveys/&lt;id&gt;</code></td>
+                <td>PUT</td>
+                <td>Update a survey</td>
+                <td>Updated survey data</td>
+                <td>Updated survey info</td>
+            </tr>
+            <tr>
+                <td><code>/api/surveys/&lt;id&gt;</code></td>
+                <td>DELETE</td>
+                <td>Delete a survey</td>
+                <td>-</td>
+                <td>Empty response (204)</td>
+            </tr>
+            <tr>
+                <td><code>/api/surveys/compare</code></td>
+                <td>GET</td>
+                <td>Compare two surveys</td>
+                <td>survey1_id, survey2_id (query params)</td>
+                <td>Side-by-side comparison data</td>
+            </tr>
+            <tr>
+                <td><code>/api/search</code></td>
+                <td>GET</td>
+                <td>Search for questions</td>
+                <td>q, use_nlp (query params)</td>
+                <td>Search results with matching questions</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h3>4.3 NLP Search System</h3>
+    <p>The application integrates a sophisticated natural language processing search system with these key components:</p>
+    <ol>
+        <li><strong>Model Loading</strong>: Uses the sentence-transformers/all-MiniLM-L6-v2 model for efficient sentence embedding</li>
+        <li><strong>Embedding Generation</strong>: Creates vector embeddings of survey questions and search queries</li>
+        <li><strong>Cosine Similarity</strong>: Calculates similarity scores between question and query embeddings</li>
+        <li><strong>Dynamic Threshold</strong>: Configurable similarity threshold (default: 0.6)</li>
+        <li><strong>Graceful Degradation</strong>: Falls back to keyword search when:
+            <ul>
+                <li>NLP dependencies are not available</li>
+                <li>Model initialization fails</li>
+                <li>Query embedding fails</li>
+                <li>Any runtime error occurs</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h2>5. Key Features</h2>
+
+    <h3>5.1 Survey Management</h3>
+    <ul>
+        <li>Create surveys with unique names and timestamps</li>
+        <li>Add, edit, and delete questions with custom numbering</li>
+        <li>Manage multiple answer options per question</li>
+        <li>Automatic tracking of creation and modification dates</li>
+    </ul>
+
+    <h3>5.2 Version Control & Comparison</h3>
+    <ul>
+        <li>Store multiple versions of surveys</li>
+        <li>Side-by-side comparison of any two surveys</li>
+        <li>Filter questions using search in comparison view</li>
+        <li>Timestamps for tracking version history</li>
+    </ul>
+
+    <h3>5.3 Natural Language Search</h3>
+    <ul>
+        <li>Semantic search using transformer models</li>
+        <li>Option to toggle between NLP and keyword search</li>
+        <li>Search across all surveys or within specific surveys</li>
+        <li>Automatic detection of NLP availability</li>
+        <li>Graceful fallback to keyword search</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h3>5.4 UI Features</h3>
+    <ul>
+        <li>Dark mode support with system preference detection</li>
+        <li>Responsive design for mobile and desktop</li>
+        <li>Interactive question forms with real-time updates</li>
+        <li>Download survey data as JSON</li>
+    </ul>
+
+    <h3>5.5 Audit Logging</h3>
+    <ul>
+        <li>Comprehensive audit trail of all operations</li>
+        <li>Timestamps and details for each action</li>
+        <li>Entity type and ID tracking for reference</li>
+    </ul>
+
+    <h2>6. Implementation Details</h2>
+
+    <h3>6.1 Database Connection</h3>
+    <p>The application uses SQLAlchemy to connect to PostgreSQL with connection pooling and health checks:</p>
+    <pre><code>app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}</code></pre>
+
+    <h3>6.2 NLP Model Initialization</h3>
+    <pre><code>def initialize_model():
+    try:
+        model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModel.from_pretrained(model_name)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to initialize NLP model: {str(e)}")
+        return False</code></pre>
+
+    <div class="page-break"></div>
+
+    <h3>6.3 Embedding Generation</h3>
+    <pre><code>def get_embedding(text):
+    try:
+        encoded_input = tokenizer(text, padding=True, truncation=True, return_tensors='pt')
+        with torch.no_grad():
+            model_output = model(**encoded_input)
+        embedding = mean_pooling(model_output, encoded_input['attention_mask'])
+        return embedding.squeeze().numpy()
+    except Exception as e:
+        logger.error(f"Error generating embedding for text: {str(e)}")
+        return None</code></pre>
+
+    <h3>6.4 React Component Structure</h3>
+    <p>The React frontend is organized into smaller, reusable components:</p>
+    <ul>
+        <li>App (main container)
+            <ul>
+                <li>DarkModeToggle</li>
+                <li>QuestionForm</li>
+                <li>QuestionsList
+                    <ul>
+                        <li>QuestionCard</li>
+                    </ul>
+                </li>
+                <li>SurveyList
+                    <ul>
+                        <li>SurveyListItem</li>
+                    </ul>
+                </li>
+                <li>SearchForm</li>
+                <li>SearchResults</li>
+                <li>SurveyDisplay</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>7. Performance and Optimization</h2>
+
+    <h3>7.1 Database Optimizations</h3>
+    <ul>
+        <li>Connection pooling with <code>pool_recycle</code> to manage connections</li>
+        <li>Pre-ping mechanism to detect stale connections</li>
+        <li>Cascade delete operations to maintain referential integrity</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h3>7.2 NLP Optimizations</h3>
+    <ul>
+        <li>Small, efficient model (MiniLM-L6-v2) for sentence embeddings</li>
+        <li>Caching of model and tokenizer instances</li>
+        <li>Lazy loading of NLP components</li>
+        <li>Batch processing of embeddings where appropriate</li>
+    </ul>
+
+    <h3>7.3 Frontend Optimizations</h3>
+    <ul>
+        <li>CDN-loaded libraries to reduce server load</li>
+        <li>Responsive design for multiple device types</li>
+        <li>Progressive enhancement for browsers without JavaScript</li>
+    </ul>
+
+    <h2>8. Security Considerations</h2>
+
+    <h3>8.1 Implemented Security Features</h3>
+    <ul>
+        <li>SQLAlchemy ORM for query parameterization against SQL injection</li>
+        <li>Input validation on both client and server sides</li>
+        <li>Cross-Origin policy adherence</li>
+        <li>ProxyFix middleware for proper header handling</li>
+        <li>Audit logging for all significant operations</li>
+    </ul>
+
+    <h3>8.2 Recommendations for Production</h3>
+    <ul>
+        <li>Implement user authentication and authorization</li>
+        <li>Set secure and HTTP-only cookies</li>
+        <li>Add rate limiting for API endpoints</li>
+        <li>Configure HTTPS with proper certificates</li>
+        <li>Implement CSRF protection</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>9. Deployment Guide</h2>
+
+    <h3>9.1 Environment Setup</h3>
+    <ul>
+        <li>Python 3.8+ runtime</li>
+        <li>PostgreSQL 12+ database</li>
+        <li>Required Python packages in requirements.txt</li>
+        <li>Environment variables for configuration</li>
+    </ul>
+
+    <h3>9.2 Database Initialization</h3>
+    <ul>
+        <li>Automatic table creation via SQLAlchemy</li>
+        <li>No manual migrations required</li>
+        <li>Schema creation on first startup</li>
+    </ul>
+
+    <h3>9.3 Server Configuration</h3>
+    <ul>
+        <li>Gunicorn as the WSGI server</li>
+        <li>Bind to 0.0.0.0:5000 for network access</li>
+        <li>Enable reuse-port and auto-reload for development</li>
+    </ul>
+
+    <h2>10. Future Enhancements</h2>
+
+    <h3>10.1 Planned Features</h3>
+    <ul>
+        <li>User authentication and multi-user support</li>
+        <li>Export functionality to PDF and Excel</li>
+        <li>Advanced analytics dashboard</li>
+        <li>Email notification system</li>
+        <li>More sophisticated diff visualization</li>
+    </ul>
+
+    <h3>10.2 Technical Improvements</h3>
+    <ul>
+        <li>Server-side rendering option for improved SEO</li>
+        <li>Full text search integration with PostgreSQL</li>
+        <li>Improved caching mechanisms</li>
+        <li>Background processing for large survey operations</li>
+    </ul>
+
+    <hr>
+
+    <p>This technical documentation provides a comprehensive overview of the Survey Tracking Web Application's architecture, technical stack, and functionality. The application combines modern web technologies with natural language processing capabilities to create a robust system for managing and analyzing survey questions.</p>
+</body>
+</html>

@@ -1,0 +1,5 @@
+postgresSQL 17
+
+default user: postgres
+pwd: 5035
+port: 5432
